@@ -1,4 +1,119 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
-    
+
+    <!-- TODO: Discuss to keep this service in a separate component as it's a generic csv to json transformation service -->
+    <!-- TODO: This service can also take file path as an input. Add handling for file path later. -->
+    <service verb="transform" noun="CsvToJson" authenticate="anonymous-all" transaction-timeout="1800">
+        <description>Service to transform csv text to json text.</description>
+        <in-parameters>
+            <parameter name="inputCsvText" required="true">
+                <description>The text for the input csv to be transformed.</description>
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="transformedJsonText">
+                <description>The text for the transformed output json.</description>
+            </parameter>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+                import com.fasterxml.jackson.databind.MappingIterator
+                import com.fasterxml.jackson.databind.ObjectMapper
+                import com.fasterxml.jackson.dataformat.csv.CsvMapper
+                import com.fasterxml.jackson.dataformat.csv.CsvSchema
+
+                CsvSchema csvSchema = CsvSchema.emptySchema().withHeader()
+                CsvMapper csvMapper = new CsvMapper()
+                List<Map<?, ?>> list
+                MappingIterator<Map<?, ?>> mappingIterator = csvMapper.reader()
+                    .forType(Map.class)
+                    .with(csvSchema)
+                    .readValues(inputCsvText)
+                list = mappingIterator.readAll()
+                ObjectMapper objectMapper = new ObjectMapper()
+                transformedJsonText = objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(list)
+           ]]></script>
+        </actions>
+    </service>
+
+    <!-- TODO: Discuss to keep this service in a separate component as it's a generic json to csv transformation service -->
+    <!-- TODO: This service can also take file path as an input. Add handling for file path later. -->
+    <service verb="transform" noun="JsonToCsv" authenticate="anonymous-all" transaction-timeout="1800">
+        <description>Service to transform json text to csv text.</description>
+        <in-parameters>
+            <parameter name="inputJsonText" required="true">
+                <description>The text for the input json to be transformed.</description>
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="transformedCsvText">
+                <description>The text for the transformed output csv.</description>
+            </parameter>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+               import com.fasterxml.jackson.databind.JsonNode
+               import com.fasterxml.jackson.databind.ObjectMapper
+               import com.fasterxml.jackson.dataformat.csv.CsvMapper
+               import com.fasterxml.jackson.dataformat.csv.CsvSchema
+
+               JsonNode jsonTree = new ObjectMapper().readTree(inputJsonText)
+               CsvSchema.Builder csvSchemaBuilder = CsvSchema.builder()
+
+               JsonNode firstObject = jsonTree.elements().next()
+               firstObject.fieldNames().each{fieldName -> csvSchemaBuilder.addColumn(fieldName)}
+               CsvSchema csvSchema = csvSchemaBuilder.build().withHeader()
+               CsvMapper csvMapper = new CsvMapper()
+               transformedCsvText = csvMapper.writerFor(JsonNode.class)
+                    .with(csvSchema)
+                    .writeValueAsString(jsonTree)
+            ]]></script>
+        </actions>
+    </service>
+
+    <!-- TODO: Explore other JSON transformation Java libraries as jolt is not stream based, details on task: https://app.clickup.com/t/2hcybc8  -->
+    <!-- TODO: Discuss to keep this service in a separate component as it's a generic json to json transformation service -->
+    <service verb="transform" noun="JsonToJson" authenticate="anonymous-all" transaction-timeout="1800">
+        <description>
+            Service to transform Json from one format to another based on the input json specs.
+            This service either takes jsonSpecText or the jsonSpecFilePath for transformation.
+        </description>
+        <in-parameters>
+            <parameter name="inputJsonText" required="true">
+                <description>The text for the input json to be transformed.</description>
+            </parameter>
+            <parameter name="jsonSpecText">
+                <description>The json spec text containing the operations that will be used for transformation.</description>
+            </parameter>
+            <parameter name="jsonSpecFilePath">
+                <description>The file path for json spec containing the operations that will be used for transformation.</description>
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="transformedJsonText">
+                <description>The text for the transformed output json.</description>
+            </parameter>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+            import com.bazaarvoice.jolt.Chainr
+            import com.bazaarvoice.jolt.JsonUtils
+
+            chainrSpecJSON = null
+            if (jsonSpecText){
+                chainrSpecJSON = JsonUtils.jsonToObject(jsonSpecText)
+            }
+            if (jsonSpecFilePath){
+                chainrSpecJSON = JsonUtils.filepathToList(jsonSpecFilePath)
+            }
+
+            Chainr chainr = Chainr.fromSpec(chainrSpecJSON)
+
+            Object inputJSON = JsonUtils.jsonToObject(inputJsonText)
+            Object transformedOutput = chainr.transform(inputJSON)
+            transformedJsonText = JsonUtils.toJsonString(transformedOutput)
+            ]]></script>
+        </actions>
+    </service>
 </services>
