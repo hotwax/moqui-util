@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+
+        <entity entity-name="TransformTemplate" package="co.hotwax.util" use="configuration" cache="true">
+            <field name="templateId" type="id" is-pk="true"/>
+            <field name="transformTypeEnumId" type="id"/>
+            <field name="transformTemplateLocation" type="text-short"></field>
+            <relationship type="one" title="Transform" related="moqui.basic.Enumeration">
+                <key-map field-name="transformTypeEnumId"/></relationship>
+            <seed-data>
+                <moqui.basic.EnumerationType description="Transformation Type" enumTypeId="TransformType"/>
+            </seed-data>
+        </entity>
+</entities>
