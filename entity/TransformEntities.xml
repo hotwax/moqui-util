@@ -5,7 +5,7 @@
         <entity entity-name="TransformTemplate" package="co.hotwax.util" use="configuration" cache="true">
             <field name="templateId" type="id" is-pk="true"/>
             <field name="transformTypeEnumId" type="id"/>
-            <field name="transformTemplateLocation" type="text-short"></field>
+            <field name="transformTemplateLocation" type="text-medium"></field>
             <relationship type="one" title="Transform" related="moqui.basic.Enumeration">
                 <key-map field-name="transformTypeEnumId"/></relationship>
             <seed-data>
