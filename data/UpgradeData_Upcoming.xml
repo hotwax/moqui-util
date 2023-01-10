@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<entity-facade-xml type="ext-upgrade-dev">
+
+    <!-- Enumeration Type data for defining Transform Types -->
+    <moqui.basic.EnumerationType description="Transformation Type" enumTypeId="TransformType"/>
+</entity-facade-xml>
